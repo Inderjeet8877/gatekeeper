@@ -1,0 +1,14 @@
+{
+  "name": "Gatekeeper",
+  "short_name": "Gatekeeper",
+  "description": "Every arrival, accounted for.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0B1B3F",
+  "background_color": "#FBFAF7",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

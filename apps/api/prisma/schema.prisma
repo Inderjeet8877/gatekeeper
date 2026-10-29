@@ -1,0 +1,695 @@
+// Gatekeeper — canonical Prisma schema.
+// Source of truth: docs/00-PROJECT-BRIEF.md §6. Field reference: docs/03-DATA-DICTIONARY.md. ERD: docs/04-ERD.md.
+//
+// Conventions
+// - Models/fields camelCase; physical tables/columns snake_case via @@map/@map.
+// - ids: cuid strings. Timestamps UTC (timestamptz). Money: Int paise (₹1 = 100).
+// - Every society-owned row carries societyId (tenancy scoping).
+// - "…ById" actor fields reference Membership.id (actor-in-society); Notification.userId references User.id.
+// - onDelete: Cascade for owned child rows; NoAction (restrict semantics, checked at end of statement so a
+//   Society cascade can still remove everything in one statement) for required actor/history references;
+//   SetNull for optional references.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum Role {
+  ADMIN
+  RESIDENT
+  GUARD
+
+  @@map("role")
+}
+
+enum ResidentType {
+  OWNER
+  TENANT
+  FAMILY
+
+  @@map("resident_type")
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("membership_status")
+}
+
+enum VisitorType {
+  GUEST
+  DELIVERY
+  CAB
+  SERVICE
+
+  @@map("visitor_type")
+}
+
+enum VisitorStatus {
+  PENDING_APPROVAL
+  APPROVED
+  DENIED
+  EXPIRED
+  CHECKED_IN
+  CHECKED_OUT
+  LEFT_AT_GATE
+  COLLECTED
+
+  @@map("visitor_status")
+}
+
+enum PreApprovalStatus {
+  ACTIVE
+  USED
+  CANCELLED
+  EXPIRED
+
+  @@map("pre_approval_status")
+}
+
+enum StaffCategory {
+  MAID
+  COOK
+  DRIVER
+  NANNY
+  CLEANER
+  GARDENER
+  OTHER
+
+  @@map("staff_category")
+}
+
+enum NoticeCategory {
+  GENERAL
+  MAINTENANCE
+  EVENT
+  URGENT
+
+  @@map("notice_category")
+}
+
+enum TicketCategory {
+  PLUMBING
+  ELECTRICAL
+  CLEANING
+  SECURITY
+  LIFT
+  PARKING
+  OTHER
+
+  @@map("ticket_category")
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("ticket_priority")
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+
+  @@map("ticket_status")
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+
+  @@map("booking_status")
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PAID
+  OVERDUE
+
+  @@map("invoice_status")
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  NETBANKING
+  CASH
+
+  @@map("payment_method")
+}
+
+enum ExpenseCategory {
+  SECURITY
+  HOUSEKEEPING
+  ELECTRICITY
+  WATER
+  REPAIRS
+  SALARIES
+  OTHER
+
+  @@map("expense_category")
+}
+
+enum SosType {
+  MEDICAL
+  FIRE
+  THEFT
+  OTHER
+
+  @@map("sos_type")
+}
+
+enum SosStatus {
+  RAISED
+  ACKNOWLEDGED
+  RESOLVED
+
+  @@map("sos_status")
+}
+
+// ───────────────────────── Core / Tenancy ─────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique @db.VarChar(15)
+  name      String
+  email     String?
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  memberships   Membership[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model OtpCode {
+  id         String    @id @default(cuid())
+  phone      String    @db.VarChar(15)
+  codeHash   String    @map("code_hash")
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  attempts   Int       @default(0)
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([phone])
+  @@map("otp_codes")
+}
+
+model Society {
+  id          String   @id @default(cuid())
+  name        String
+  addressLine String   @map("address_line")
+  city        String
+  state       String
+  pincode     String   @db.VarChar(10)
+  logoUrl     String?  @map("logo_url")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  blocks          Block[]
+  flats           Flat[]
+  memberships     Membership[]
+  visitors        Visitor[]
+  preApprovals    PreApproval[]
+  staff           Staff[]
+  staffAttendance StaffAttendance[]
+  notices         Notice[]
+  polls           Poll[]
+  tickets         Ticket[]
+  ticketComments  TicketComment[]
+  amenities       Amenity[]
+  amenityBookings AmenityBooking[]
+  invoices        Invoice[]
+  payments        Payment[]
+  expenses        Expense[]
+  sosAlerts       SosAlert[]
+  notifications   Notification[]
+
+  @@map("societies")
+}
+
+model Block {
+  id        String   @id @default(cuid())
+  societyId String   @map("society_id")
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flats   Flat[]
+
+  @@unique([societyId, name])
+  @@map("blocks")
+}
+
+model Flat {
+  id        String   @id @default(cuid())
+  societyId String   @map("society_id")
+  blockId   String   @map("block_id")
+  number    String
+  floor     Int?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society         Society          @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  block           Block            @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  memberships     Membership[]
+  visitors        Visitor[]
+  preApprovals    PreApproval[]
+  staffFlats      StaffFlat[]
+  tickets         Ticket[]
+  amenityBookings AmenityBooking[]
+  invoices        Invoice[]
+  sosAlerts       SosAlert[]
+
+  @@unique([blockId, number])
+  @@index([societyId])
+  @@map("flats")
+}
+
+model Membership {
+  id           String           @id @default(cuid())
+  userId       String           @map("user_id")
+  societyId    String           @map("society_id")
+  role         Role
+  flatId       String?          @map("flat_id")
+  residentType ResidentType?    @map("resident_type")
+  status       MembershipStatus @default(ACTIVE)
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  society Society @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat    Flat?   @relation(fields: [flatId], references: [id], onDelete: NoAction)
+
+  visitorsLogged        Visitor[]         @relation("VisitorLoggedBy")
+  visitorsDecided       Visitor[]         @relation("VisitorDecidedBy")
+  preApprovalsCreated   PreApproval[]     @relation("PreApprovalCreatedBy")
+  staffAttendanceLogged StaffAttendance[] @relation("StaffAttendanceLoggedBy")
+  noticesCreated        Notice[]          @relation("NoticeCreatedBy")
+  pollsCreated          Poll[]            @relation("PollCreatedBy")
+  pollVotes             PollVote[]        @relation("PollVoteMembership")
+  ticketsRaised         Ticket[]          @relation("TicketRaisedBy")
+  ticketsAssigned       Ticket[]          @relation("TicketAssignedTo")
+  ticketComments        TicketComment[]   @relation("TicketCommentAuthor")
+  amenityBookings       AmenityBooking[]  @relation("AmenityBookingBookedBy")
+  payments              Payment[]         @relation("PaymentPaidBy")
+  expensesCreated       Expense[]         @relation("ExpenseCreatedBy")
+  sosRaised             SosAlert[]        @relation("SosRaisedBy")
+  sosAcknowledged       SosAlert[]        @relation("SosAcknowledgedBy")
+
+  @@unique([userId, societyId])
+  @@index([societyId, role])
+  @@index([flatId])
+  @@map("memberships")
+}
+
+// ───────────────────────── Gate & Staff ─────────────────────────
+
+model Visitor {
+  id            String        @id @default(cuid())
+  societyId     String        @map("society_id")
+  flatId        String        @map("flat_id")
+  type          VisitorType
+  name          String
+  phone         String?       @db.VarChar(15)
+  company       String?
+  vehicleNo     String?       @map("vehicle_no")
+  photoUrl      String?       @map("photo_url")
+  purpose       String?
+  status        VisitorStatus @default(PENDING_APPROVAL)
+  preApprovalId String?       @map("pre_approval_id")
+  loggedById    String        @map("logged_by_id")
+  decidedById   String?       @map("decided_by_id")
+  decidedAt     DateTime?     @map("decided_at") @db.Timestamptz(3)
+  checkInAt     DateTime?     @map("check_in_at") @db.Timestamptz(3)
+  checkOutAt    DateTime?     @map("check_out_at") @db.Timestamptz(3)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society     Society      @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat        Flat         @relation(fields: [flatId], references: [id], onDelete: NoAction)
+  preApproval PreApproval? @relation(fields: [preApprovalId], references: [id], onDelete: SetNull)
+  loggedBy    Membership   @relation("VisitorLoggedBy", fields: [loggedById], references: [id], onDelete: NoAction)
+  decidedBy   Membership?  @relation("VisitorDecidedBy", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([societyId, status])
+  @@index([flatId, createdAt])
+  @@index([societyId, createdAt])
+  @@map("visitors")
+}
+
+model PreApproval {
+  id          String            @id @default(cuid())
+  societyId   String            @map("society_id")
+  flatId      String            @map("flat_id")
+  createdById String            @map("created_by_id")
+  type        VisitorType
+  guestName   String            @map("guest_name")
+  guestPhone  String?           @map("guest_phone") @db.VarChar(15)
+  // 6 digits. Unique among ACTIVE rows in a society — enforced in the service layer
+  // (a partial unique index can't be expressed in Prisma; see data dictionary §Business rules).
+  passcode    String            @db.Char(6)
+  validFrom   DateTime          @map("valid_from") @db.Timestamptz(3)
+  validTo     DateTime          @map("valid_to") @db.Timestamptz(3)
+  maxUses     Int               @default(1) @map("max_uses")
+  usedCount   Int               @default(0) @map("used_count")
+  status      PreApprovalStatus @default(ACTIVE)
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society   Society    @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat      Flat       @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  createdBy Membership @relation("PreApprovalCreatedBy", fields: [createdById], references: [id], onDelete: NoAction)
+  visitors  Visitor[]
+
+  @@index([societyId, passcode])
+  @@index([flatId, status])
+  @@map("pre_approvals")
+}
+
+model Staff {
+  id        String        @id @default(cuid())
+  societyId String        @map("society_id")
+  name      String
+  phone     String?       @db.VarChar(15)
+  category  StaffCategory
+  passcode  String        @db.Char(6)
+  photoUrl  String?       @map("photo_url")
+  isActive  Boolean       @default(true) @map("is_active")
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society    Society           @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flats      StaffFlat[]
+  attendance StaffAttendance[]
+
+  @@unique([societyId, passcode])
+  @@map("staff")
+}
+
+model StaffFlat {
+  id        String   @id @default(cuid())
+  staffId   String   @map("staff_id")
+  flatId    String   @map("flat_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  flat  Flat  @relation(fields: [flatId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, flatId])
+  @@index([flatId])
+  @@map("staff_flats")
+}
+
+model StaffAttendance {
+  id         String    @id @default(cuid())
+  staffId    String    @map("staff_id")
+  societyId  String    @map("society_id")
+  checkInAt  DateTime  @map("check_in_at") @db.Timestamptz(3)
+  checkOutAt DateTime? @map("check_out_at") @db.Timestamptz(3)
+  loggedById String    @map("logged_by_id")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  staff    Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  society  Society    @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  loggedBy Membership @relation("StaffAttendanceLoggedBy", fields: [loggedById], references: [id], onDelete: NoAction)
+
+  @@index([staffId, checkInAt])
+  @@index([societyId, checkInAt])
+  @@map("staff_attendance")
+}
+
+// ─────────────────────── Community (Notices, Polls, Helpdesk, Amenities, SOS) ───────────────────────
+
+model Notice {
+  id          String         @id @default(cuid())
+  societyId   String         @map("society_id")
+  title       String
+  body        String
+  category    NoticeCategory @default(GENERAL)
+  isPinned    Boolean        @default(false) @map("is_pinned")
+  createdById String         @map("created_by_id")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society   Society    @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  createdBy Membership @relation("NoticeCreatedBy", fields: [createdById], references: [id], onDelete: NoAction)
+
+  @@index([societyId, isPinned, createdAt])
+  @@map("notices")
+}
+
+model Poll {
+  id          String    @id @default(cuid())
+  societyId   String    @map("society_id")
+  question    String
+  closesAt    DateTime? @map("closes_at") @db.Timestamptz(3)
+  createdById String    @map("created_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society   Society      @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  createdBy Membership   @relation("PollCreatedBy", fields: [createdById], references: [id], onDelete: NoAction)
+  options   PollOption[]
+  votes     PollVote[]
+
+  @@index([societyId, createdAt])
+  @@map("polls")
+}
+
+model PollOption {
+  id        String   @id @default(cuid())
+  pollId    String   @map("poll_id")
+  text      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  poll  Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([pollId])
+  @@map("poll_options")
+}
+
+model PollVote {
+  id           String   @id @default(cuid())
+  pollId       String   @map("poll_id")
+  optionId     String   @map("option_id")
+  membershipId String   @map("membership_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  poll       Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option     PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  membership Membership @relation("PollVoteMembership", fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, membershipId])
+  @@index([optionId])
+  @@map("poll_votes")
+}
+
+model Ticket {
+  id           String         @id @default(cuid())
+  societyId    String         @map("society_id")
+  flatId       String?        @map("flat_id")
+  raisedById   String         @map("raised_by_id")
+  assignedToId String?        @map("assigned_to_id")
+  category     TicketCategory
+  title        String
+  description  String
+  priority     TicketPriority @default(MEDIUM)
+  status       TicketStatus   @default(OPEN)
+  resolvedAt   DateTime?      @map("resolved_at") @db.Timestamptz(3)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society    Society         @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat       Flat?           @relation(fields: [flatId], references: [id], onDelete: SetNull)
+  raisedBy   Membership      @relation("TicketRaisedBy", fields: [raisedById], references: [id], onDelete: NoAction)
+  assignedTo Membership?     @relation("TicketAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  comments   TicketComment[]
+
+  @@index([societyId, status])
+  @@index([raisedById])
+  @@map("tickets")
+}
+
+model TicketComment {
+  id        String   @id @default(cuid())
+  ticketId  String   @map("ticket_id")
+  // Added beyond brief: tenancy column + lets a Society cascade remove comments before their authors.
+  societyId String   @map("society_id")
+  authorId  String   @map("author_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  ticket  Ticket     @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  society Society    @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  author  Membership @relation("TicketCommentAuthor", fields: [authorId], references: [id], onDelete: NoAction)
+
+  @@index([ticketId, createdAt])
+  @@map("ticket_comments")
+}
+
+model Amenity {
+  id           String   @id @default(cuid())
+  societyId    String   @map("society_id")
+  name         String
+  description  String?
+  openTime     String   @map("open_time") @db.Char(5) // "HH:mm", society local time (Asia/Kolkata)
+  closeTime    String   @map("close_time") @db.Char(5) // "HH:mm"
+  slotMinutes  Int      @map("slot_minutes")
+  capacity     Int      @default(1)
+  pricePerSlot Int      @default(0) @map("price_per_slot") // paise
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society  Society          @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  bookings AmenityBooking[]
+
+  @@index([societyId])
+  @@map("amenities")
+}
+
+model AmenityBooking {
+  id         String        @id @default(cuid())
+  amenityId  String        @map("amenity_id")
+  societyId  String        @map("society_id")
+  flatId     String        @map("flat_id")
+  bookedById String        @map("booked_by_id")
+  startAt    DateTime      @map("start_at") @db.Timestamptz(3)
+  endAt      DateTime      @map("end_at") @db.Timestamptz(3)
+  status     BookingStatus @default(CONFIRMED)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  amenity  Amenity    @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  society  Society    @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat     Flat       @relation(fields: [flatId], references: [id], onDelete: Cascade)
+  bookedBy Membership @relation("AmenityBookingBookedBy", fields: [bookedById], references: [id], onDelete: NoAction)
+
+  @@index([amenityId, startAt])
+  @@index([flatId, startAt])
+  @@map("amenity_bookings")
+}
+
+model SosAlert {
+  id               String    @id @default(cuid())
+  societyId        String    @map("society_id")
+  flatId           String?   @map("flat_id")
+  raisedById       String    @map("raised_by_id")
+  type             SosType
+  message          String?
+  status           SosStatus @default(RAISED)
+  acknowledgedById String?   @map("acknowledged_by_id")
+  acknowledgedAt   DateTime? @map("acknowledged_at") @db.Timestamptz(3)
+  resolvedAt       DateTime? @map("resolved_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society        Society     @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat           Flat?       @relation(fields: [flatId], references: [id], onDelete: SetNull)
+  raisedBy       Membership  @relation("SosRaisedBy", fields: [raisedById], references: [id], onDelete: NoAction)
+  acknowledgedBy Membership? @relation("SosAcknowledgedBy", fields: [acknowledgedById], references: [id], onDelete: SetNull)
+
+  @@index([societyId, status])
+  @@map("sos_alerts")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  societyId String?   @map("society_id")
+  type      String // e.g. "visitor.requested", "sos.raised", "notice.created"
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime? @map("read_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  society Society? @relation(fields: [societyId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+// ─────────────────────────── Finance ───────────────────────────
+
+model Invoice {
+  id        String        @id @default(cuid())
+  societyId String        @map("society_id")
+  flatId    String        @map("flat_id")
+  period    String        @db.Char(7) // "YYYY-MM"
+  amount    Int // paise
+  dueDate   DateTime      @map("due_date") @db.Date
+  status    InvoiceStatus @default(UNPAID)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society  Society   @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  flat     Flat      @relation(fields: [flatId], references: [id], onDelete: NoAction)
+  payments Payment[]
+
+  @@unique([flatId, period])
+  @@index([societyId, period])
+  @@index([societyId, status])
+  @@map("invoices")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  invoiceId String        @map("invoice_id")
+  societyId String        @map("society_id")
+  amount    Int // paise
+  method    PaymentMethod
+  reference String
+  paidById  String?       @map("paid_by_id")
+  paidAt    DateTime      @default(now()) @map("paid_at") @db.Timestamptz(3)
+  createdAt DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  invoice Invoice     @relation(fields: [invoiceId], references: [id], onDelete: NoAction)
+  society Society     @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  paidBy  Membership? @relation("PaymentPaidBy", fields: [paidById], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([societyId, paidAt])
+  @@map("payments")
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  societyId   String          @map("society_id")
+  category    ExpenseCategory
+  amount      Int // paise
+  vendor      String?
+  note        String?
+  spentOn     DateTime        @map("spent_on") @db.Date
+  createdById String          @map("created_by_id")
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  society   Society    @relation(fields: [societyId], references: [id], onDelete: Cascade)
+  createdBy Membership @relation("ExpenseCreatedBy", fields: [createdById], references: [id], onDelete: NoAction)
+
+  @@index([societyId, spentOn])
+  @@map("expenses")
+}

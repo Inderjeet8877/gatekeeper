@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: gatekeeper
+      POSTGRES_PASSWORD: gatekeeper
+      POSTGRES_DB: gatekeeper
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gatekeeper"]
+      interval: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:4
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql://gatekeeper:gatekeeper@db:5432/gatekeeper
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please-32chars}
+      NODE_ENV: ${NODE_ENV:-development}
+      CORS_ORIGINS: http://localhost:8080,http://localhost:5173,http://localhost:8081,http://localhost:19006
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        VITE_API_URL: http://localhost:4000/api/v1
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

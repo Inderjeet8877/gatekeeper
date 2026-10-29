@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Gatekeeper — Every arrival, accounted for.</title>
+    <meta name="description" content="Gatekeeper runs the gate, the helpdesk and the society accounts for gated communities." />
+    <meta name="theme-color" content="#0B1B3F" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,500..600,50&family=Manrope:wght@400..700&display=swap" rel="stylesheet" />
+    <script>
+      (function () {
+        try {
+          var pref = localStorage.getItem('gk-theme');
+          var isApp = location.pathname.indexOf('/app') === 0;
+          var dark = isApp && (pref === 'dark' || (!pref && matchMedia('(prefers-color-scheme: dark)').matches));
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

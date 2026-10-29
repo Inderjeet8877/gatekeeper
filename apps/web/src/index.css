@@ -1,0 +1,144 @@
+/* Gatekeeper tokens — light by default; dark when <html class="dark"> */
+:root {
+  color-scheme: light;
+  --gk-canvas: 251 250 247;
+  --gk-canvas-tint: 242 244 247;
+  --gk-surface: 255 255 255;
+  --gk-surface-raised: 255 255 255;
+  --gk-surface-sunken: 249 250 251;
+  --gk-line: 234 236 240;
+  --gk-line-strong: 122 133 153;
+  --gk-fg: 17 24 39;
+  --gk-fg-muted: 71 84 103;
+  --gk-fg-subtle: 102 112 133;
+  --gk-fg-heading: 11 27 63;
+  --gk-fg-on-brand: 255 255 255;
+  --gk-brand: 12 127 98;
+  --gk-brand-hover: 11 111 86;
+  --gk-brand-fg: 11 111 86;
+  --gk-navy: 11 27 63;
+  --gk-navy-hover: 29 59 122;
+  --gk-focus: 18 163 126;
+  --gk-gold: 200 160 74;
+  --gk-danger: 209 67 67;
+  --gk-danger-hover: 176 50 50;
+  --gk-danger-fg: 176 50 50;
+
+  --gk-success-bg: 232 247 241;  --gk-success-fg: 9 88 69;       --gk-success-dot: 14 138 106;
+  --gk-warning-bg: 253 246 224;  --gk-warning-fg: 107 77 0;      --gk-warning-dot: 224 161 0;
+  --gk-danger-bg: 253 237 237;   --gk-danger-chip-fg: 140 40 40; --gk-danger-dot: 209 67 67;
+  --gk-info-bg: 238 242 250;     --gk-info-fg: 19 40 90;         --gk-info-dot: 29 59 122;
+  --gk-neutral-bg: 242 244 247;  --gk-neutral-fg: 52 64 84;      --gk-neutral-dot: 152 162 179;
+  --gk-gold-bg: 246 237 214;     --gk-gold-fg: 95 72 26;         --gk-gold-dot: 200 160 74;
+
+  --gk-overlay: rgb(6 14 34 / .48);
+  --gk-skeleton: 234 236 240;
+
+  --gk-shadow-xs: 0 1px 2px rgb(16 24 40 / .06);
+  --gk-shadow-card: 0 1px 2px rgb(16 24 40 / .06), 0 8px 24px rgb(16 24 40 / .06);
+  --gk-shadow-raised: 0 2px 4px rgb(16 24 40 / .06), 0 12px 32px rgb(16 24 40 / .10);
+  --gk-shadow-overlay: 0 4px 8px rgb(16 24 40 / .06), 0 24px 48px rgb(16 24 40 / .14);
+  --gk-ring-offset: 255 255 255;
+}
+
+.dark {
+  color-scheme: dark;
+  --gk-canvas: 6 14 34;
+  --gk-canvas-tint: 4 10 25;
+  --gk-surface: 12 23 48;
+  --gk-surface-raised: 18 32 63;
+  --gk-surface-sunken: 8 18 39;
+  --gk-line: 34 51 90;
+  --gk-line-strong: 106 123 163;
+  --gk-fg: 238 241 247;
+  --gk-fg-muted: 169 180 203;
+  --gk-fg-subtle: 125 137 163;
+  --gk-fg-heading: 255 255 255;
+  --gk-fg-on-brand: 255 255 255;
+  --gk-brand: 12 127 98;
+  --gk-brand-hover: 11 111 86;
+  --gk-brand-fg: 60 199 157;
+  --gk-navy: 19 40 90;
+  --gk-navy-hover: 29 59 122;
+  --gk-focus: 60 199 157;
+  --gk-gold: 217 185 103;
+  --gk-danger: 209 67 67;
+  --gk-danger-hover: 176 50 50;
+  --gk-danger-fg: 240 122 122;
+
+  --gk-success-bg: 15 46 42;   --gk-success-fg: 60 199 157;      --gk-success-dot: 60 199 157;
+  --gk-warning-bg: 46 38 16;   --gk-warning-fg: 242 193 78;      --gk-warning-dot: 242 193 78;
+  --gk-danger-bg: 53 26 34;    --gk-danger-chip-fg: 240 122 122; --gk-danger-dot: 240 122 122;
+  --gk-info-bg: 20 38 80;      --gk-info-fg: 141 176 240;        --gk-info-dot: 141 176 240;
+  --gk-neutral-bg: 26 39 71;   --gk-neutral-fg: 169 180 203;     --gk-neutral-dot: 125 137 163;
+  --gk-gold-bg: 44 38 21;      --gk-gold-fg: 217 185 103;        --gk-gold-dot: 217 185 103;
+
+  --gk-overlay: rgb(0 0 0 / .64);
+  --gk-skeleton: 22 38 74;
+
+  --gk-shadow-xs: 0 1px 2px rgb(0 0 0 / .4);
+  --gk-shadow-card: 0 1px 2px rgb(0 0 0 / .4);
+  --gk-shadow-raised: 0 8px 24px rgb(0 0 0 / .5);
+  --gk-shadow-overlay: 0 24px 48px rgb(0 0 0 / .6);
+  --gk-ring-offset: 6 14 34;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%; }
+  body { background: rgb(var(--gk-canvas)); color: rgb(var(--gk-fg)); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  :focus-visible { outline: 2px solid rgb(var(--gk-focus)); outline-offset: 2px; }
+  h1, h2, h3, h4 { color: rgb(var(--gk-fg-heading)); text-wrap: balance; }
+  p { text-wrap: pretty; }
+  .font-display { font-variation-settings: "SOFT" 50, "WONK" 0; }
+  summary { cursor: pointer; list-style: none; }
+  /* Grid items may shrink below their content (truncated text, scrolling tables) — prevents page-level horizontal scroll. */
+  .grid > * { min-width: 0; }
+  summary::-webkit-details-marker { display: none; }
+}
+
+@layer components {
+  .gk-skeleton {
+    background-color: rgb(var(--gk-skeleton));
+    background-image: linear-gradient(90deg, transparent 0, rgb(255 255 255 / .4) 50%, transparent 100%);
+    background-size: 400px 100%;
+    background-repeat: no-repeat;
+    animation: gk-shimmer 1.4s linear infinite;
+  }
+  .dark .gk-skeleton { background-image: linear-gradient(90deg, transparent 0, rgb(255 255 255 / .06) 50%, transparent 100%); }
+
+  /* Native <dialog>: centred on desktop, bottom sheet under 640px */
+  dialog.gk-modal { padding: 0; border: 0; background: transparent; max-width: 100vw; max-height: 100dvh; overflow: visible; }
+  dialog.gk-modal::backdrop { background: var(--gk-overlay); }
+  dialog.gk-modal[open] { animation: gk-rise 320ms cubic-bezier(0.05,0.7,0.1,1); }
+  @media (max-width: 639px) {
+    dialog.gk-modal { margin: auto 0 0 0; width: 100vw; }
+  }
+
+  .gk-sos-ring { transition: stroke-dashoffset 2000ms linear; }
+  .gk-sos-ring.rewind { transition-duration: 200ms; }
+
+  /* Marketing site-plan ornament behind the hero ledger */
+  .gk-siteplan {
+    background-image:
+      linear-gradient(rgb(19 40 90 / .4) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(19 40 90 / .4) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at 60% 45%, black 20%, transparent 70%);
+  }
+}
+
+@keyframes gk-shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+@keyframes gk-rise { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important; scroll-behavior: auto !important;
+  }
+  .gk-skeleton { animation: none; background-image: none; }
+  .gk-sos-ring { transition-duration: 2000ms !important; }
+}
