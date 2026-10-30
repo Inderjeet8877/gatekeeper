@@ -75,7 +75,7 @@ export default function AmenityBook() {
                   <Pressable key={s.startAt} disabled={full || yours} onPress={() => setPick(s)} accessibilityRole="radio"
                     accessibilityState={{ selected: sel, disabled: full || yours }}
                     accessibilityLabel={`${formatTime(s.startAt)} to ${formatTime(s.endAt)}, ${yours ? 'your booking' : full ? 'full' : `${s.available} of ${s.capacity} places left`}`}
-                    style={{ width: '31%', flexGrow: 1, minHeight: 56, borderRadius: 10, padding: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: bg, borderWidth: 1, borderColor: sel ? t.colors.brand : full ? t.colors.line : t.colors.lineStrong }}>
+                    style={{ flexBasis: '30%', flexGrow: 1, maxWidth: '32%', minHeight: 56, borderRadius: 10, padding: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: bg, borderWidth: 1, borderColor: sel ? t.colors.brand : full ? t.colors.line : t.colors.lineStrong }}>
                     <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
                       {(sel || yours) && <I icon={sel ? Check : CalendarCheck} size={14} color={fg} />}
                       <Txt v="label" color={fg} style={{ fontVariant: ['tabular-nums'] }}>{formatTime(s.startAt)}</Txt>

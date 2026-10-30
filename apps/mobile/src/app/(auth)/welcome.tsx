@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,9 +7,11 @@ import { palette } from '@/lib/theme';
 
 export default function Welcome() {
   const insets = useSafeAreaInsets();
+  // Welcome stays mounted under /phone and /otp; only force light icons while it is on top.
+  const focused = useIsFocused();
   return (
     <View style={{ flex: 1, backgroundColor: palette.navy[950], paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24, paddingHorizontal: 24 }}>
-      <StatusBar style="light" />
+      {focused && <StatusBar style="light" />}
       <View style={{ flex: 1, justifyContent: 'center', gap: 20 }}>
         <LogoMark size={72} />
         <Txt v="displayXl" color={palette.paper} accessibilityRole="header">Every arrival,{'\n'}accounted for.</Txt>
