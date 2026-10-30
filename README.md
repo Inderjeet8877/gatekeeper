@@ -59,6 +59,7 @@ All planning and design documents live in [docs/](docs). Start with the [project
 | [API spec](docs/08-API-SPEC.md) | REST + SSE contract |
 | [UI/UX design system](docs/09-UI-UX-DESIGN-SYSTEM.md) | Brand, tokens, components, screens, flows |
 | [Test plan](docs/10-TEST-PLAN.md) · [Roadmap](docs/11-ROADMAP.md) | |
+| [Production readiness](docs/12-PRODUCTION-READINESS.md) | Launch blockers, hosting plan, Play Store steps |
 
 ## v1 limitations
 The payment gateway is mocked, there is no SMS provider (the OTP is shown in dev only), and there are no push notifications: realtime alerts reach only open apps. Photo uploads are not supported yet. See the [roadmap](docs/11-ROADMAP.md).

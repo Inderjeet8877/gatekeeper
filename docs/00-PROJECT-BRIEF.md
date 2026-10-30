@@ -196,3 +196,4 @@ Plus sample staff (passcode 482913), a pre-approval (passcode 135790), notices, 
 | 09 | `09-UI-UX-DESIGN-SYSTEM.md` | Brand, tokens, components, screen inventory, flows |
 | 10 | `10-TEST-PLAN.md` | Test strategy & cases |
 | 11 | `11-ROADMAP.md` | Phased delivery & future scope |
+| 12 | `12-PRODUCTION-READINESS.md` | Launch blockers, hosting, Play Store guide (+ `audits/`) |
