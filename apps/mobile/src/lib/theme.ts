@@ -139,12 +139,14 @@ export const layout = {
   guardIconStroke: 2,
 } as const;
 
-/** True inside the (guard) group — switches to the high-contrast console theme. */
-export const GuardContext = createContext(false);
+/** Inside the (guard) group: the high-contrast console theme, Day or Night (§5.3, overrides the system). null elsewhere. */
+export const GuardContext = createContext<'day' | 'night' | null>(null);
 
 export function useTheme() {
-  const isDark = useColorScheme() === 'dark';
-  const guard = useContext(GuardContext);
+  const scheme = useColorScheme();
+  const mode = useContext(GuardContext);
+  const guard = mode !== null;
+  const isDark = guard ? mode === 'night' : scheme === 'dark';
   const colors = guard ? (isDark ? guardDark : guardLight) : isDark ? darkColors : lightColors;
   return { colors, type, space, radii, shadows, motion, layout, fonts, isDark, guard };
 }

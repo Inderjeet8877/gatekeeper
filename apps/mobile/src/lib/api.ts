@@ -1,5 +1,7 @@
 // Thin fetch client for docs/08-API-SPEC.md. Shapes below are copied from spec §3 (only what the app reads).
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000/api/v1').replace(/\/$/, '');
+/** Admin web console, shown to admin-only accounts. */
+export const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'http://localhost:8080';
 
 export class ApiError extends Error {
   constructor(public code: string, message: string, public status = 0, public details?: any) {

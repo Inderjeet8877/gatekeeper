@@ -1,14 +1,9 @@
-import { Baby, Car, ChefHat, HandHelping, House, SprayCan, Sprout, UserRound, type LucideIcon } from 'lucide-react-native';
-import { Empty, Q, Row, Screen, StatusChip, Txt } from '@/components/ui';
-import type { Staff, StaffAttendance, StaffCategory } from '@/lib/api';
-import { formatTime, humanize, istDay } from '@/lib/format';
+import { HandHelping } from 'lucide-react-native';
+import { StaffRow } from '@/components/staff';
+import { Empty, Q, Screen } from '@/components/ui';
+import type { Staff } from '@/lib/api';
 import { useList } from '@/lib/hooks';
 import { useSession } from '@/lib/session';
-import { STATUS } from '@/lib/status';
-
-const STAFF_ICON: Record<StaffCategory, LucideIcon> = {
-  MAID: House, COOK: ChefHat, DRIVER: Car, NANNY: Baby, CLEANER: SprayCan, GARDENER: Sprout, OTHER: UserRound,
-};
 
 export default function DailyHelp() {
   const { member } = useSession();
@@ -20,18 +15,5 @@ export default function DailyHelp() {
         {(items) => items.map((s) => <StaffRow key={s.id} s={s} />)}
       </Q>
     </Screen>
-  );
-}
-
-function StaffRow({ s }: { s: Staff }) {
-  const att = useList<StaffAttendance>(['staff', s.id, 'attendance'], `/staff/${s.id}/attendance?date=${istDay().key}`);
-  const today = att.data ?? [];
-  return (
-    <Row icon={STAFF_ICON[s.category]} title={s.name} subtitle={humanize(s.category)} right={<StatusChip spec={STATUS.staff[s.isInside ? 'IN' : 'OUT']} />}>
-      <Txt v="bodySm" c="fgMuted" style={{ fontVariant: ['tabular-nums'] }}>
-        {att.isPending ? 'Loading today…' : att.isError ? "Couldn't load today's attendance." : today.length === 0 ? 'Not seen today.'
-          : today.map((a) => `In ${formatTime(a.checkInAt)}${a.checkOutAt ? ` · Out ${formatTime(a.checkOutAt)}` : ''}`).join('\n')}
-      </Txt>
-    </Row>
   );
 }

@@ -38,6 +38,7 @@ export default function Otp() {
       const code = e instanceof ApiError ? e.code : '';
       if (code === 'NAME_REQUIRED') setNeedName(true);
       else {
+        setNeedName(false); // e.g. the code expired while typing the name: back to the code boxes + resend
         setError(
           code === 'OTP_INVALID' ? "That code isn't right. Check the SMS and try again."
             : code === 'OTP_EXPIRED' ? 'This code expired. Request a new one.'

@@ -16,4 +16,8 @@ assert.equal(f.maskPhone('9876543210'), '+91 ••••• 43210');
 assert.equal(f.istDay(0, new Date('2026-10-29T19:00:00Z')).key, '2026-10-30'); // 00:30 IST next day
 assert.equal(f.formatWeekdayDate(now), 'Thursday, 29 Oct');
 assert.equal(f.greeting(now), 'Good evening');
+assert.equal(f.isNightIST(now), false); // 5:42 pm
+assert.equal(f.isNightIST(new Date('2026-10-29T13:30:00Z')), true); // 7:00 pm
+assert.equal(f.isNightIST(new Date('2026-10-29T00:29:00Z')), true); // 5:59 am
+assert.equal(f.isNightIST(new Date('2026-10-29T00:30:00Z')), false); // 6:00 am
 console.log('format.ts: all checks passed');

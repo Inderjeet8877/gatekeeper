@@ -24,6 +24,8 @@ The API must be running on port 4000 (see `apps/api`, or `docker compose up` fro
 | Android emulator | `http://10.0.2.2:4000/api/v1` |
 | Physical phone in Expo Go | `http://<PC LAN IP>:4000/api/v1`, e.g. `http://192.168.1.20:4000/api/v1` |
 
+`EXPO_PUBLIC_WEB_URL` (default `http://localhost:8080`) is the admin web console link shown to admin-only accounts.
+
 The phone and the PC must be on the same Wi-Fi. Find the IP with `ipconfig`, and allow inbound TCP 4000 in Windows Firewall. After you change `.env`, restart `npx expo start -c`.
 
 ## Demo accounts (seed, brief §9)
@@ -35,7 +37,7 @@ Society **Emerald Heights**, Bengaluru. In dev, the API returns the OTP as `devC
 | Resident | 9000000002 | Rohan Mehta | A-101 |
 | Resident | 9000000004 | Priya Iyer | B-201 |
 | Guard | 9000000003 | Suresh Kumar | none |
-| Admin | 9000000001 | Ananya Rao | none (gets the "use the web console" message) |
+| Admin | 9000000001 | Ananya Rao | none (gets the "use the web console" message with the web URL and sign-out) |
 
 Gate passcodes: pre-approval `135790` (a guest for A-101) and staff `482913` (maid; each entry toggles check-in/check-out).
 
@@ -49,17 +51,20 @@ src/app/index.tsx              redirects to the right home
 src/app/(auth)/                welcome · phone · otp · societies (picker / admin message / no membership)
 src/app/(resident)/(tabs)/     home · visitors · community · services · profile
 src/app/(resident)/            invite · tickets · ticket-new · ticket/[id] · amenities · amenity/[id] · bookings · staff · payments · notifications
-src/app/(guard)/               gate · log · inside · expected · alerts   (high-contrast console theme)
+src/app/(guard)/               gate · log · inside · expected · staff · alerts   (high-contrast console theme, Day/Night)
 src/components/ui.tsx          Button, Card, Screen, StatusChip, Field, Chips, Sheet, Empty/Error/Skeleton, Toast, Logo, Threshold
 src/components/visitor.tsx     approval hero card + visitor row
 src/components/sos.tsx         2-second hold SOS with progress ring → type sheet → live status
 src/components/invite.tsx      guest pass card + share text
+src/components/staff.tsx       daily-help row with today's attendance (resident + guard)
 src/lib/                       api (fetch + types) · session (SecureStore) · realtime (SSE) · hooks · theme · format · status
 ```
 
 ## Realtime
 
 `react-native-sse` connects to `/events?token&societyId`. Each event invalidates the matching query: `visitors`, `sos`, `notices` or `notifications`. Residents get a vibration and an in-app banner on `visitor.requested`. Guards get them on `sos.raised`, plus a red banner that stays until the alert is acknowledged. While the stream is down, live lists poll every 5 s. The guard header shows "Live" or "Reconnecting…".
+
+The guard console switches to Night automatically from 7 pm to 6 am IST. The sun/moon button in the header overrides it until the next automatic switch.
 
 ## Checks
 
@@ -72,7 +77,6 @@ npx expo export --platform android && rm -rf dist
 
 ## Known gaps
 
-- The app icon and splash still use the template PNGs (only the splash background is navy). Export the logo SVG from docs/09 §1.4 to `assets/` before you ship.
 - There are no push notifications (expo-notifications), so alerts reach a device only while the app is open.
-- The guard Day/Night theme follows the system setting. Doc §5.3 asks for automatic switching from 7 pm to 6 am plus a toggle.
-- Not built: the guard Staff tab, the tablet landscape rail, adding daily help to a flat, and SOS acknowledgement for admins on mobile.
+- Guard staff check-in/out works only by passcode on the Gate tab (the API has no manual endpoint); the Staff tab says so and links to Gate.
+- Not built: the tablet landscape rail, adding daily help to a flat, and SOS acknowledgement for admins on mobile.

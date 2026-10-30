@@ -145,6 +145,12 @@ export function greeting(now = new Date()): string {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
+/** Guard console Night window, 7 pm–6 am IST (docs/09 §5.3). */
+export function isNightIST(now = new Date()): boolean {
+  const h = new Date(now.getTime() + IST_OFFSET).getUTCHours();
+  return h >= 19 || h < 6;
+}
+
 /** Sentence-case an enum: "IN_PROGRESS" → "In progress" */
 export const humanize = (s: string) => s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, ' ');
 

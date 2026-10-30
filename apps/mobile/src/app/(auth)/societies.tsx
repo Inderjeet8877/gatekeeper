@@ -1,7 +1,7 @@
-import { Building2, House, LogOut, Monitor, ShieldCheck, BadgeCheck } from 'lucide-react-native';
-import { View } from 'react-native';
+import { Building2, ExternalLink, House, LogOut, Monitor, ShieldCheck, BadgeCheck } from 'lucide-react-native';
+import { Linking, View } from 'react-native';
 import { Banner, Button, Empty, ErrorState, Row, Screen, Txt } from '@/components/ui';
-import type { Membership } from '@/lib/api';
+import { WEB_URL, type Membership } from '@/lib/api';
 import { formatPhone, humanize } from '@/lib/format';
 import { useSession } from '@/lib/session';
 
@@ -21,8 +21,12 @@ export default function Societies() {
     >
       {s.loadError && <ErrorState error={new Error(s.loadError)} onRetry={s.refresh} />}
       {adminOnly && (
-        <Banner tone="info" icon={Monitor} title="Use the web console for admin"
-          body="This app is for residents and security staff. Open the Gatekeeper web console on your computer to manage your society." />
+        <>
+          <Banner tone="info" icon={Monitor} title="Use the web console for admin"
+            body={`This app is for residents and security staff. To manage your society, open the Gatekeeper web console on your computer:
+${WEB_URL}`} />
+          <Button title="Open web console" variant="outline" icon={ExternalLink} onPress={() => Linking.openURL(WEB_URL).catch(() => {})} />
+        </>
       )}
       {!s.loadError && s.memberships.length === 0 && (
         <Empty icon={Building2} title="You're not in a society yet"
