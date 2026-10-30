@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { API_URL } from './api';
+import { API_URL, api } from './api';
 import { useAuth } from '../auth/AuthContext';
 import { useToast } from '../components/ui';
-import type { Notification } from './types';
+import type { Membership, Notification, User } from './types';
 
 /** Notification type → query keys it makes stale. */
 const BY_TYPE: Record<string, string[]> = {
@@ -19,7 +19,7 @@ const BY_TYPE: Record<string, string[]> = {
  * stream (4xx → CLOSED) we retry every 10 s. No replay, so everything is refetched after a reconnect.
  */
 export function useEvents(): boolean {
-  const { token, active } = useAuth();
+  const { token, active, update } = useAuth();
   const qc = useQueryClient();
   const toast = useToast();
   const [live, setLive] = useState(false);
@@ -53,12 +53,14 @@ export function useEvents(): boolean {
       try { n = JSON.parse((e as MessageEvent).data); } catch { /* ignore malformed */ }
       if (!n) return;
       inv(...(BY_TYPE[n.type] ?? []));
-      // SOS has its own takeover; never toast it.
-      if (!n.type.startsWith('SOS')) toast(n.body, 'info', n.title);
+      // Added to another society: refresh memberships so the switcher shows it without a reload.
+      if (n.type === 'MEMBERSHIP_ADDED') api<{ user: User; memberships: Membership[] }>('/me').then(update).catch(() => {});
+      // SOS and visitor requests have their own full-screen takeovers; don't toast underneath them.
+      if (!n.type.startsWith('SOS') && n.type !== 'VISITOR_REQUESTED') toast(n.body, 'info', n.title);
     });
 
     return () => { es.close(); window.clearTimeout(timer); setLive(false); };
-  }, [token, societyId, attempt, qc, toast]);
+  }, [token, societyId, attempt, qc, toast, update]);
 
   return live;
 }

@@ -442,3 +442,34 @@ Run in Phase 6 on staging-equivalent hardware (2 vCPU / 4 GB, API and DB on the 
 - The CI job publishes the Vitest JUnit report and coverage. `describe` names carry TC IDs.
 - A per-phase test summary lists TCs executed, passed, failed and blocked, open defects by severity, and smoke result.
 - **Coverage rule:** every FR and NFR in the SRS §7 matrix maps to at least one TC in this plan. Every TC here maps back to an SRS ID. When a requirement changes, update the SRS matrix and this plan in the same change.
+
+## 13. Execution log
+
+### 2026-10-30 — first web ↔ API integration run (QA)
+
+**Setup:** docker compose stack (db :5433, api :4000, web :8080). Playwright smoke at `apps/web/e2e/smoke.spec.mjs` (plain node script; see its header for how to run). It was run against the Vite dev server (:5173) while fixing, then against the rebuilt nginx image (:8080).
+
+**Coverage:**
+- Crawl: 9 marketing routes (desktop + mobile, logged out). Every admin route, light and dark. Every resident and guard route, desktop light/dark and mobile 390 px. Every in-page tab, plus ticket detail. Each page is checked for console errors, page errors, API responses ≥ 400, failed requests, blank screens, "undefined/NaN/Invalid Date" text and horizontal overflow, with one screenshot per page.
+- Flows (31 steps, run in the real UI with several browser contexts at once):
+  - Gate and visitors: guard logs a walk-in guest, resident gets the live SSE approval card and approves, guard sees APPROVED, then check-in and check-out. Delivery left at gate, then collected. Resident denies a cab. Passcodes 135790 (visitor in), 482913 (staff in/out toggle) and 000000 (friendly error).
+  - Admin: dashboard KPIs, post notice (resident sees it live), pin/delete notice, create poll, generate next-month invoices twice (second run idempotent), add expense, add block + bulk flats + member, create/edit amenity, link staff to a flat, staff attendance, record a cash payment.
+  - Resident: create invite and get a passcode, which the guard verifies; cancel invite. Raise ticket, admin moves it to IN_PROGRESS, assigns and comments, resident sees the update and closes it. Book an amenity slot and cancel it. Mock-pay an invoice. Vote in a poll. Edit profile. Notifications "mark all read".
+  - SOS: long-press, guard takeover, acknowledge (resident sees it), resolve.
+  - Onboarding and tenancy: a new phone gets NAME_REQUIRED, creates a society and blocks/flats, and adds resident 9000000004. She then picks a society and switches between two.
+
+**Result:** crawl and all 31 flow steps passed with zero unexpected console or network errors against :8080. `apps/web` build is clean. `apps/api` `tsc --noEmit` is clean and 57/57 Vitest tests pass.
+
+**Defects found and fixed (all web; no API contract violations were found):**
+1. Sev-1 · `App.tsx`: the scroll-to-top effect returned `window.scrollTo()`. Current Chromium returns a Promise from it, so React threw "destroy is not a function" on the first navigation and the whole app went blank (login and every portal).
+2. Sev-3 · `admin/Dashboard.tsx`: admins get no visitor SSE events (§5.2), so "Live at the gate", the KPIs and the nav badges went stale. The summary now polls every 15 s.
+3. Sev-3 · `lib/sse.ts`: on `MEMBERSHIP_ADDED` the client now refreshes `/me`, so a new society appears in the switcher without a reload.
+4. Sev-4 · `lib/sse.ts`: the VISITOR_REQUESTED toast is no longer drawn under the full-screen approval card.
+5. Sev-4 · `pages/Login.tsx`: the rate-limit copy said 10 minutes; the API window is 15 minutes.
+6. Sev-4 · `resident/Home.tsx`: the "SOS / Hold 2 s" label overlapped list status chips on mobile. It now sits on a raised pill.
+
+**Notes:**
+- The smoke run creates QA-prefixed rows (visitors, a block, a member, a closed amenity, a poll, a society). Each run uses one use of seeded passcode 135790 (maxUses 10). Restart `api` to re-seed.
+- OTP requests are limited to 5 per 15 min per phone. The script signs in each role once per run and reuses the session.
+
+Screenshots: `docs/screenshots/`.

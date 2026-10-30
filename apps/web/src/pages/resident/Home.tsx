@@ -41,8 +41,11 @@ export function SosButton() {
           </svg>
           <Siren size={32} aria-hidden />
         </button>
-        <span className="mt-1 text-label text-fg-heading">SOS</span>
-        <span className="text-caption text-fg-subtle">{holding ? 'Keep holding…' : 'Hold 2 s'}</span>
+        {/* Pill backing so the label stays readable over list content scrolling underneath. */}
+        <span className="mt-1.5 flex flex-col items-center rounded-control bg-surface-raised/95 px-2 py-0.5 leading-tight shadow-raised">
+          <span className="text-label text-fg-heading">SOS</span>
+          <span className="text-caption text-fg-subtle">{holding ? 'Keep holding…' : 'Hold 2 s'}</span>
+        </span>
         <span className="sr-only" aria-live="assertive">{holding ? 'Hold for 2 seconds' : ''}</span>
       </div>
       <SosSheet open={sheet} onClose={() => setSheet(false)} />

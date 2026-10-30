@@ -11,7 +11,8 @@ const more = (to: string, label: string) => <Link to={to} className="text-label 
 
 export default function Dashboard() {
   const now = useNow();
-  const summary = useGet<ReportSummary>('/reports/summary');
+  // Admins get no visitor SSE events (docs/08 §5.2), so poll to keep "Live at the gate" live.
+  const summary = useGet<ReportSummary>('/reports/summary', undefined, { refetchInterval: 15_000 });
   const pending = useGet<List<Visitor>>('/visitors', { status: 'PENDING_APPROVAL' });
   const tickets = useGet<List<Ticket>>('/tickets', { status: 'OPEN,IN_PROGRESS', limit: 5 });
   const notices = useGet<List<Notice>>('/notices', { limit: 3 });

@@ -42,7 +42,7 @@ export default function Login() {
       setStep('otp'); setCode(''); setWrong(0); setResendIn(30);
     } catch (err) {
       const a = err as ApiError;
-      setError(a.code === 'RATE_LIMITED' ? 'Too many requests. Try again in 10 minutes.' : a.message);
+      setError(a.code === 'RATE_LIMITED' ? 'Too many code requests. Try again in 15 minutes.' : a.message);
     } finally { setBusy(false); }
   };
 
