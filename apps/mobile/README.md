@@ -28,7 +28,7 @@ The API must be running on port 4000 (see `apps/api`, or `docker compose up` fro
 
 The phone and the PC must be on the same Wi-Fi. Find the IP with `ipconfig`, and allow inbound TCP 4000 in Windows Firewall. After you change `.env`, restart `npx expo start -c`.
 
-## Demo accounts (seed, brief §9)
+## Demo accounts
 
 Society **Emerald Heights**, Bengaluru. In dev, the API returns the OTP as `devCode`, and the OTP screen shows it in a gold callout.
 
@@ -71,7 +71,7 @@ The guard console switches to Night automatically from 7 pm to 6 am IST. The sun
 ```bash
 npx tsc --noEmit
 npx expo-doctor
-npm run check:format         # format.ts assertions (docs/09 §8.4)
+npm run check:format         # format.ts assertions
 npx expo export --platform android && rm -rf dist
 ```
 

@@ -1,65 +1,72 @@
 # Gatekeeper
 
-**Every arrival, accounted for.** A gated-community management platform: visitor management at the gate, resident convenience, and society administration.
+Gatekeeper is a society management app for gated communities. Guards log visitors at the gate, residents approve them from their phone, and the society admin handles notices, dues, complaints, amenity bookings and the rest of the day to day stuff.
 
-| App | Path | Stack |
-|---|---|---|
-| API | [apps/api](apps/api) | Node + TypeScript, Express 5, Prisma, PostgreSQL, Zod, SSE |
-| Web (marketing site + admin / resident / guard portals) | [apps/web](apps/web) | Vite, React 18, Tailwind, TanStack Query |
-| Mobile (resident + guard) | [apps/mobile](apps/mobile) | Expo, expo-router |
+There are three parts in this repo:
 
-## Quick start
+- `apps/api` - backend (Node, TypeScript, Express 5, Prisma, PostgreSQL)
+- `apps/web` - marketing site plus the admin, resident and guard web portals (React, Vite, Tailwind)
+- `apps/mobile` - the resident and guard app (Expo / React Native)
 
-Requires Docker Desktop.
+## Running it locally
+
+You need Docker Desktop. From the repo root:
 
 ```bash
 docker compose up -d --build
 ```
 
-| Service | URL |
-|---|---|
-| Website & web app | http://localhost:8080 |
-| API | http://localhost:4000/api/v1 (health: `/health`) |
-| Adminer (DB GUI) | http://localhost:8081 — server `db`, user/pass/db `gatekeeper` |
-| PostgreSQL | `localhost:5433` (host port 5433 avoids clashing with a local Postgres) |
+That starts everything:
 
-The API container runs migrations and seeds the demo society on start.
+- Web app: http://localhost:8080
+- API: http://localhost:4000/api/v1 (health check at `/health`)
+- Adminer: http://localhost:8081 (server `db`, user, password and database are all `gatekeeper`)
+- Postgres: `localhost:5433`
 
-### Demo accounts (society "Emerald Heights")
-Log in with the phone number. In development, the OTP is shown on the login screen.
+I mapped Postgres to 5433 on purpose because I already have a local Postgres on 5432. The API container runs the migrations and seeds a demo society every time it starts.
 
-| Role | Phone | Notes |
+### Demo logins
+
+The demo society is called Emerald Heights. Log in with one of these phone numbers. In development the OTP is shown right on the login screen, so you don't need SMS.
+
+| Role | Phone | |
 |---|---|---|
-| Admin | 9000000001 | Web console |
-| Resident | 9000000002 | Flat A-101 |
-| Resident | 9000000004 | Flat B-201 |
-| Guard | 9000000003 | Gate console (web or mobile) |
+| Admin | 9000000001 | use the web console |
+| Resident | 9000000002 | flat A-101 |
+| Resident | 9000000004 | flat B-201 |
+| Guard | 9000000003 | gate console on web or mobile |
 
-Gate passcodes: guest pre-approval **135790**, daily help **482913**.
+Passcodes to try at the gate: `135790` for a pre-approved guest and `482913` for the maid.
 
-### Local development
+### Without Docker (except the database)
+
 ```bash
 docker compose up -d db
-cd apps/api && cp .env.example .env && npm i && npm run db:deploy && npm run db:seed && npm run dev
-cd apps/web && npm i && npm run dev          # http://localhost:5173
-cd apps/mobile && npm i && npx expo start    # see apps/mobile/README.md
-cd apps/api && npm test                      # API test suite
+
+cd apps/api
+cp .env.example .env
+npm i
+npm run db:deploy
+npm run db:seed
+npm run dev
+
+cd apps/web && npm i && npm run dev        # http://localhost:5173
+cd apps/mobile && npm i && npx expo start  # more in apps/mobile/README.md
 ```
 
-## Documentation
-All planning and design documents live in [docs/](docs). Start with the [project brief](docs/00-PROJECT-BRIEF.md).
+Tests for the API: `cd apps/api && npm test` (needs the database running).
 
-| Doc | |
-|---|---|
-| [PRD](docs/01-PRD.md) | Product requirements, personas, user stories |
-| [SRS](docs/02-SRS.md) | Functional & non-functional requirements, traceability |
-| [Data dictionary](docs/03-DATA-DICTIONARY.md) · [ERD](docs/04-ERD.md) | Data model |
-| [DFD](docs/05-DFD.md) | Data flow diagrams L0–L2 |
-| [HLD](docs/06-HLD.md) · [LLD](docs/07-LLD.md) | Architecture, patterns, ADRs, module design |
-| [API spec](docs/08-API-SPEC.md) | REST + SSE contract |
-| [UI/UX design system](docs/09-UI-UX-DESIGN-SYSTEM.md) | Brand, tokens, components, screens, flows |
-| [Test plan](docs/10-TEST-PLAN.md) · [Roadmap](docs/11-ROADMAP.md) | |
-| [Production readiness](docs/12-PRODUCTION-READINESS.md) | Launch blockers, hosting plan, Play Store steps |
+## Docs
 
-## v1 limitations
-The payment gateway is mocked, there is no SMS provider (the OTP is shown in dev only), and there are no push notifications: realtime alerts reach only open apps. Photo uploads are not supported yet. See the [roadmap](docs/11-ROADMAP.md).
+All the planning documents are in the [docs](docs) folder. The [project brief](docs/00-PROJECT-BRIEF.md) is the place to start, it links to everything else: PRD, SRS, data dictionary, ERD, DFDs, HLD/LLD, the API spec, the design system, the test plan and the roadmap.
+
+[docs/12-PRODUCTION-READINESS.md](docs/12-PRODUCTION-READINESS.md) has the list of what still has to be done before this goes live on the Play Store.
+
+## What's not done yet
+
+- Payments are mocked. No real gateway is wired up.
+- No SMS provider, so OTP only works in dev mode.
+- No push notifications. Alerts only show up while the app is open.
+- No photo uploads.
+
+See the [roadmap](docs/11-ROADMAP.md) for what's planned next.

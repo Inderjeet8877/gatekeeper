@@ -6,3 +6,6 @@ build/
 *.log
 .DS_Store
 web-build/
+.claude/
+AGENTS.md
+CLAUDE.md
